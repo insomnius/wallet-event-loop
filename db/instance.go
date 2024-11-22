@@ -6,6 +6,7 @@ import (
 )
 
 var ErrTableAlreadyExists = errors.New("table already exists")
+var ErrTableIsNotFound = errors.New("table is not found")
 
 var DefaultOperationLimit = 100
 
@@ -26,6 +27,7 @@ func NewInstance() *Instance {
 		tables:        map[string]*sync.Map{},
 		operationChan: make(chan operationArgument, DefaultOperationLimit), // buffered allocation, faster since the memory is already allocated first instead of dynamically
 		operationWg:   &sync.WaitGroup{},
+		operationOpen: false,
 	}
 }
 
@@ -88,4 +90,19 @@ func (i *Instance) CreateTable(tableName string) error {
 	}
 
 	return i.enqueueProcess(op)
+}
+
+func (i *Instance) GetTable(tableName string) (*Table, error) {
+	table, found := i.tables[tableName]
+	if !found {
+		return nil, ErrTableIsNotFound
+	}
+
+	return &Table{
+		data: table,
+	}, nil
+}
+
+func (i *Instance) Transaction() {
+
 }

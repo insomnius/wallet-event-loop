@@ -15,6 +15,10 @@ func main() {
 		dbInstance.Start()
 	}()
 
+	dbInstance.CreateTable("users")
+	dbInstance.CreateTable("wallets")
+	dbInstance.CreateTable("transactions")
+
 	dbInstance.Close()
 
 	fmt.Println("Closing e-wallet services...")
