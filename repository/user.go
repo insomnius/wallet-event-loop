@@ -29,7 +29,7 @@ func (u *User) FindById(id string, txs ...*db.Transaction) (*entity.User, error)
 	return v.(*entity.User), nil
 }
 
-func (u *User) Create(user *entity.User, txs ...*db.Transaction) error {
+func (u *User) Put(user *entity.User, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {
 		return err

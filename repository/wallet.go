@@ -29,7 +29,24 @@ func (u *Wallet) FindById(id string, txs ...*db.Transaction) (*entity.Wallet, er
 	return v.(*entity.Wallet), nil
 }
 
-func (u *Wallet) Create(wallet *entity.Wallet, txs ...*db.Transaction) error {
+func (u *Wallet) FindByUserID(userID string, txs ...*db.Transaction) (*entity.Wallet, error) {
+	t, err := u.table(txs...)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := t.Filter(func(v any) bool {
+		return v.(*entity.Wallet).UserID == userID
+	})
+
+	if len(filtered) == 0 {
+		return nil, db.ErrNotFound
+	}
+
+	return filtered[0].(*entity.Wallet), nil
+}
+
+func (u *Wallet) Put(wallet *entity.Wallet, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {
 		return err

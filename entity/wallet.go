@@ -2,6 +2,6 @@ package entity
 
 type Wallet struct {
 	ID      string
-	UserID  int
+	UserID  string
 	Balance int
 }

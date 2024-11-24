@@ -29,7 +29,7 @@ func (u *Mutation) FindById(id string, txs ...*db.Transaction) (*entity.Mutation
 	return v.(*entity.Mutation), nil
 }
 
-func (u *Mutation) Create(mutation *entity.Mutation, txs ...*db.Transaction) error {
+func (u *Mutation) Put(mutation *entity.Mutation, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {
 		return err
@@ -38,6 +38,29 @@ func (u *Mutation) Create(mutation *entity.Mutation, txs ...*db.Transaction) err
 	_ = t.ReplaceOrStore(mutation.ID, mutation)
 
 	return nil
+}
+
+func (u *Mutation) GetByUserID(userID string, txs ...*db.Transaction) ([]*entity.Mutation, error) {
+	t, err := u.table(txs...)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := t.Filter(func(v any) bool {
+		return v.(*entity.Mutation).UserID == userID
+	})
+
+	if len(filtered) == 0 {
+		return nil, db.ErrNotFound
+	}
+
+	converted := []*entity.Mutation{}
+
+	for _, v := range filtered {
+		converted = append(converted, v.(*entity.Mutation))
+	}
+
+	return converted, nil
 }
 
 func (u *Mutation) table(txs ...*db.Transaction) (*db.Table, error) {
