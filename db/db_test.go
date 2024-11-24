@@ -81,11 +81,11 @@ func TestTransaction(t *testing.T) {
 	wg.Wait()
 
 	if errCount != 9 {
-		t.Fatal("transaction process failed", errCount, successCount)
+		t.Fatal("transaction process failed, err count", errCount, successCount)
 	}
 
 	if successCount != 1 {
-		t.Fatal("transaction process failed", errCount, successCount)
+		t.Fatal("transaction process failed, success count", errCount, successCount)
 	}
 }
 

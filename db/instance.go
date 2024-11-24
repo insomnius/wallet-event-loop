@@ -113,32 +113,28 @@ func (i *Instance) GetTable(tableName string) (*Table, error) {
 
 func (i *Instance) Transaction(f func(*Transaction) error) error {
 	op := func(x *Instance) error {
-		tables := &sync.Map{}
-
-		x.tables.Range(func(key, value any) bool {
-			tables.Store(key, cloneSyncMap(value.(*sync.Map)))
-			return true
-		})
-
 		transaction := &Transaction{
-			tables: tables,
+			tables:  x.tables,
+			changes: make(map[string]map[any]any),
 		}
 
 		if err := f(transaction); err != nil {
+			// rollback don't do anything
 			return err
 		}
-		x.tables = transaction.tables
+
+		// commit
+		for table, change := range transaction.changes {
+			loadedTable, _ := x.tables.Load(table)
+			assertedTable := loadedTable.(*sync.Map)
+			for primaryKey, row := range change {
+				assertedTable.Store(primaryKey, row)
+			}
+		}
+
+		x.tables = transaction.tables // this is same as commit
 		return nil
 	}
 
 	return i.enqueueProcess(op, "transaction")
-}
-
-func cloneSyncMap(src *sync.Map) *sync.Map {
-	dest := &sync.Map{}
-	src.Range(func(key, value any) bool {
-		dest.Store(key, value) // Copy each key-value pair
-		return true
-	})
-	return dest
 }
