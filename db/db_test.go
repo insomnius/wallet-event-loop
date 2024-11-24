@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -85,6 +86,65 @@ func TestTransaction(t *testing.T) {
 
 	if successCount != 1 {
 		t.Fatal("transaction process failed", errCount, successCount)
+	}
+}
+
+func BenchmarkTransaction(b *testing.B) {
+
+	inst := db.NewInstance()
+	defer inst.Close()
+
+	go func() {
+		inst.Start()
+	}()
+
+	for n := 0; n < b.N; n++ {
+		tableName := fmt.Sprintf("users%d", n)
+		inst.CreateTable(tableName)
+
+		var errCount int32
+		var successCount int32
+		wg := &sync.WaitGroup{}
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				err := inst.Transaction(func(x *db.Instance) error {
+					userTable, err := x.GetTable(tableName)
+					if err != nil {
+						return err
+					}
+
+					_, err = userTable.FindByID("xx")
+					if err == nil {
+						return errors.New("data dengan id xx sudah ada")
+					}
+
+					userTable.ReplaceOrStore("xx", entity.User{
+						ID:   "xx",
+						Name: "super",
+					})
+
+					return nil
+				})
+				if err != nil {
+					atomic.AddInt32(&errCount, 1)
+				} else {
+					atomic.AddInt32(&successCount, 1)
+				}
+			}()
+		}
+
+		wg.Wait()
+
+		if errCount != 9 {
+			b.Fatal("transaction process failed", errCount, successCount)
+		}
+
+		if successCount != 1 {
+			b.Fatal("transaction process failed", errCount, successCount)
+		}
 	}
 }
 
