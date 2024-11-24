@@ -132,7 +132,6 @@ func (i *Instance) Transaction(f func(*Transaction) error) error {
 			}
 		}
 
-		x.tables = transaction.tables // this is same as commit
 		return nil
 	}
 
