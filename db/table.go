@@ -17,12 +17,14 @@ func (t *Table) FindByID(id string) (any, error) {
 	var v any
 	var found bool
 	err := t.enqueueProcess(func(*Instance) error {
+		// handling read commited
 		if changeV, ok := t.changes[id]; ok {
 			v = changeV
 			found = true
 			return nil
 		}
 
+		// read uncommitted
 		v, found = t.data.Load(id)
 		if !found {
 			return ErrNotFound
@@ -42,10 +44,12 @@ func (t *Table) Filter(f func(v any) bool) []any {
 
 	_ = t.enqueueProcess(func(*Instance) error {
 		t.data.Range(func(key, value any) bool {
+			// handling read commited
 			if changeV, ok := t.changes[key]; ok {
 				value = changeV
 			}
 
+			// read uncommitted
 			if f(value) {
 				filtered = append(filtered, value)
 			}
@@ -63,11 +67,13 @@ func (t *Table) ReplaceOrStore(id string, value any) any {
 	var v any
 	op := func(i *Instance) error {
 
+		// handling write uncommited
 		if i.transactionIdentifier == "sub" {
 			t.changes[id] = value
 			return nil
 		}
 
+		// handling write commited
 		v, _ = t.data.LoadOrStore(id, value)
 		return nil
 	}
