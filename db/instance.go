@@ -111,31 +111,17 @@ func (i *Instance) GetTable(tableName string) (*Table, error) {
 	}, nil
 }
 
-func (i *Instance) Transaction(f func(*Instance) error) error {
+func (i *Instance) Transaction(f func(*Transaction) error) error {
 	op := func(x *Instance) error {
-		clonedInstance := NewInstance()
-		clonedInstance.transactionIdentifier = "sub"
-
-		// run the database
-		go func() {
-			clonedInstance.Start()
-		}()
-
-		// copy all the content
-		// iirc, this called serializable copy by the snapshot
-		x.tables.Range(func(key, value any) bool {
-			clonedInstance.tables.Store(key, value)
-			return true
-		})
-
-		if err := f(clonedInstance); err != nil {
-			clonedInstance.Close()
-			return err
+		transaction := &Transaction{
+			instance: x,
+			tables:   x.tables,
 		}
 
-		clonedInstance.Close()
-		x.tables = clonedInstance.tables
-
+		if err := f(transaction); err != nil {
+			return err
+		}
+		x.tables = transaction.tables
 		return nil
 	}
 

@@ -52,7 +52,7 @@ func TestTransaction(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			err := inst.Transaction(func(x *db.Instance) error {
+			err := inst.Transaction(func(x *db.Transaction) error {
 				userTable, err := x.GetTable("users")
 				if err != nil {
 					return err
@@ -110,7 +110,7 @@ func BenchmarkTransaction(b *testing.B) {
 			go func() {
 				defer wg.Done()
 
-				err := inst.Transaction(func(x *db.Instance) error {
+				err := inst.Transaction(func(x *db.Transaction) error {
 					userTable, err := x.GetTable(tableName)
 					if err != nil {
 						return err
