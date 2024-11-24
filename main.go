@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/insomnius/wallet-event-loop/db"
+	"github.com/insomnius/wallet-event-loop/handler"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -32,6 +33,8 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.POST("/users", handler.UserRegister)
+	e.POST("/users/signin", handler.UserSignin)
 
 	go func() {
 		port := "8000"

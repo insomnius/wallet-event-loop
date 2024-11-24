@@ -113,9 +113,15 @@ func (i *Instance) GetTable(tableName string) (*Table, error) {
 
 func (i *Instance) Transaction(f func(*Transaction) error) error {
 	op := func(x *Instance) error {
+		tables := &sync.Map{}
+
+		x.tables.Range(func(key, value any) bool {
+			tables.Store(key, cloneSyncMap(value.(*sync.Map)))
+			return true
+		})
+
 		transaction := &Transaction{
-			instance: x,
-			tables:   x.tables,
+			tables: tables,
 		}
 
 		if err := f(transaction); err != nil {
@@ -126,4 +132,13 @@ func (i *Instance) Transaction(f func(*Transaction) error) error {
 	}
 
 	return i.enqueueProcess(op, "transaction")
+}
+
+func cloneSyncMap(src *sync.Map) *sync.Map {
+	dest := &sync.Map{}
+	src.Range(func(key, value any) bool {
+		dest.Store(key, value) // Copy each key-value pair
+		return true
+	})
+	return dest
 }

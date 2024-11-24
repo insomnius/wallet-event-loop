@@ -29,6 +29,22 @@ func (u *User) FindById(id string, txs ...*db.Transaction) (*entity.User, error)
 	return v.(*entity.User), nil
 }
 
+func (u *User) FindByEmail(email string, txs ...*db.Transaction) (*entity.User, error) {
+	t, err := u.table(txs...)
+	if err != nil {
+		return nil, err
+	}
+
+	v := t.Filter(func(v any) bool {
+		return v.(*entity.User).Email == email
+	})
+	if len(v) == 0 {
+		return nil, db.ErrNotFound
+	}
+
+	return v[0].(*entity.User), nil
+}
+
 func (u *User) Put(user *entity.User, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {

@@ -24,12 +24,12 @@ func TestCreateMultiple(t *testing.T) {
 	table, _ := inst.GetTable("user")
 
 	table.ReplaceOrStore("xx", entity.User{
-		ID:   "xx",
-		Name: "super",
+		ID:    "xx",
+		Email: "super@gmail.com",
 	})
 	table.ReplaceOrStore("yy", entity.User{
-		ID:   "yy",
-		Name: "super",
+		ID:    "yy",
+		Email: "super@gmail.com",
 	})
 }
 
@@ -64,8 +64,8 @@ func TestTransaction(t *testing.T) {
 				}
 
 				userTable.ReplaceOrStore("xx", entity.User{
-					ID:   "xx",
-					Name: "super",
+					ID:    "xx",
+					Email: "super@gmail.com",
 				})
 
 				return nil
@@ -86,6 +86,50 @@ func TestTransaction(t *testing.T) {
 
 	if successCount != 1 {
 		t.Fatal("transaction process failed", errCount, successCount)
+	}
+}
+
+func TestTransactionAtomicity(t *testing.T) {
+	inst := db.NewInstance()
+	defer inst.Close()
+
+	go func() {
+		inst.Start()
+	}()
+
+	inst.CreateTable("users")
+
+	err := inst.Transaction(func(x *db.Transaction) error {
+		userTable, err := x.GetTable("users")
+		if err != nil {
+			return err
+		}
+
+		_, err = userTable.FindByID("xx")
+		if err == nil {
+			return errors.New("data dengan id xx sudah ada")
+		}
+
+		userTable.ReplaceOrStore("xx", entity.User{
+			ID:    "xx",
+			Email: "super@gmail.com",
+		})
+
+		return errors.New("some error, transaction should not stored the data")
+	})
+
+	if err == nil {
+		t.Fatal("error should be not nil, but got nil instead", err)
+	}
+
+	table, _ := inst.GetTable("users")
+	v, err := table.FindByID("xx")
+	if err != db.ErrNotFound {
+		t.Fatal("should be got not found error", err, v)
+	}
+
+	if v != nil {
+		t.Fatal("v should be nil", v, err)
 	}
 }
 
@@ -122,8 +166,8 @@ func BenchmarkTransaction(b *testing.B) {
 					}
 
 					userTable.ReplaceOrStore("xx", entity.User{
-						ID:   "xx",
-						Name: "super",
+						ID:    "xx",
+						Email: "super@gmail.com",
 					})
 
 					return nil
@@ -161,8 +205,8 @@ func BenchmarkCreateMultiple(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		table.ReplaceOrStore(strconv.Itoa(i), entity.User{
-			ID:   strconv.Itoa(i),
-			Name: strconv.Itoa(i),
+			ID:    strconv.Itoa(i),
+			Email: strconv.Itoa(i),
 		})
 	}
 }
