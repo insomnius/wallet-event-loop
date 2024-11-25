@@ -9,8 +9,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/insomnius/wallet-event-loop/agregation"
 	"github.com/insomnius/wallet-event-loop/db"
 	"github.com/insomnius/wallet-event-loop/handler"
+	"github.com/insomnius/wallet-event-loop/repository"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -33,8 +35,18 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.POST("/users", handler.UserRegister)
-	e.POST("/users/signin", handler.UserSignin)
+
+	walletRepo := repository.NewWallet(dbInstance)
+	userRepo := repository.NewUser(dbInstance)
+	// mutationRepo := repository.NewMutation(dbInstance)
+	authAggregator := agregation.NewAuthorization(
+		walletRepo,
+		userRepo,
+		dbInstance,
+	)
+
+	e.POST("/users", handler.UserRegister(authAggregator))
+	e.POST("/users/signin", handler.UserSignin())
 
 	go func() {
 		port := "8000"

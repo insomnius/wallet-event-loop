@@ -61,7 +61,3 @@ func (a *Authorization) Register(email, password string) error {
 		return nil
 	})
 }
-
-func (a *Authorization) Login(email, password string) {
-
-}
