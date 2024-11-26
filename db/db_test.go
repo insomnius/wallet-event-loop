@@ -33,6 +33,35 @@ func TestCreateMultiple(t *testing.T) {
 	})
 }
 
+func TestPointerWorks(t *testing.T) {
+	inst := db.NewInstance()
+	defer inst.Close()
+
+	go func() {
+		inst.Start()
+	}()
+
+	inst.CreateTable("user")
+	table, _ := inst.GetTable("user")
+
+	user1 := entity.User{
+		ID:    "xx",
+		Email: "super@gmail.com",
+	}
+	table.ReplaceOrStore("xx", user1)
+	table.ReplaceOrStore("yy", entity.User{
+		ID:    "yy",
+		Email: "super@gmail.com",
+	})
+
+	user1.Email = "wrong"
+
+	v, _ := table.FindByID("xx")
+	if v.(entity.User).Email != "super@gmail.com" {
+		t.Fatal("data cannot changed from the pointer itself", v, user1)
+	}
+}
+
 func TestTransaction(t *testing.T) {
 	inst := db.NewInstance()
 	defer inst.Close()

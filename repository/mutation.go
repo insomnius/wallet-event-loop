@@ -15,21 +15,21 @@ func NewMutation(db *db.Instance) *Mutation {
 	}
 }
 
-func (u *Mutation) FindById(id string, txs ...*db.Transaction) (*entity.Mutation, error) {
+func (u *Mutation) FindById(id string, txs ...*db.Transaction) (entity.Mutation, error) {
 	t, err := u.table(txs...)
 	if err != nil {
-		return nil, err
+		return entity.Mutation{}, err
 	}
 
 	v, err := t.FindByID(id)
 	if err != nil {
-		return nil, err
+		return entity.Mutation{}, err
 	}
 
-	return v.(*entity.Mutation), nil
+	return v.(entity.Mutation), nil
 }
 
-func (u *Mutation) Put(mutation *entity.Mutation, txs ...*db.Transaction) error {
+func (u *Mutation) Put(mutation entity.Mutation, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {
 		return err
@@ -40,24 +40,24 @@ func (u *Mutation) Put(mutation *entity.Mutation, txs ...*db.Transaction) error 
 	return nil
 }
 
-func (u *Mutation) GetByUserID(userID string, txs ...*db.Transaction) ([]*entity.Mutation, error) {
+func (u *Mutation) GetByUserID(userID string, txs ...*db.Transaction) ([]entity.Mutation, error) {
 	t, err := u.table(txs...)
 	if err != nil {
 		return nil, err
 	}
 
 	filtered := t.Filter(func(v any) bool {
-		return v.(*entity.Mutation).UserID == userID
+		return v.(entity.Mutation).UserID == userID
 	})
 
 	if len(filtered) == 0 {
 		return nil, db.ErrNotFound
 	}
 
-	converted := []*entity.Mutation{}
+	converted := []entity.Mutation{}
 
 	for _, v := range filtered {
-		converted = append(converted, v.(*entity.Mutation))
+		converted = append(converted, v.(entity.Mutation))
 	}
 
 	return converted, nil

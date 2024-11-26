@@ -15,37 +15,37 @@ func NewUser(db *db.Instance) *User {
 	}
 }
 
-func (u *User) FindById(id string, txs ...*db.Transaction) (*entity.User, error) {
+func (u *User) FindById(id string, txs ...*db.Transaction) (entity.User, error) {
 	t, err := u.table(txs...)
 	if err != nil {
-		return nil, err
+		return entity.User{}, err
 	}
 
 	v, err := t.FindByID(id)
 	if err != nil {
-		return nil, err
+		return entity.User{}, err
 	}
 
-	return v.(*entity.User), nil
+	return v.(entity.User), nil
 }
 
-func (u *User) FindByEmail(email string, txs ...*db.Transaction) (*entity.User, error) {
+func (u *User) FindByEmail(email string, txs ...*db.Transaction) (entity.User, error) {
 	t, err := u.table(txs...)
 	if err != nil {
-		return nil, err
+		return entity.User{}, err
 	}
 
 	v := t.Filter(func(v any) bool {
-		return v.(*entity.User).Email == email
+		return v.(entity.User).Email == email
 	})
 	if len(v) == 0 {
-		return nil, db.ErrNotFound
+		return entity.User{}, db.ErrNotFound
 	}
 
-	return v[0].(*entity.User), nil
+	return v[0].(entity.User), nil
 }
 
-func (u *User) Put(user *entity.User, txs ...*db.Transaction) error {
+func (u *User) Put(user entity.User, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {
 		return err

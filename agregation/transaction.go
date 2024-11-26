@@ -34,28 +34,28 @@ func NewTransaction(
 
 func (t Transaction) TopUp(userID string, amount int) error {
 	return t.db.Transaction(func(trx *db.Transaction) error {
-		user, err := t.userRepo.FindById(userID)
+		user, err := t.userRepo.FindById(userID, trx)
 		if err != nil {
 			return err
 		}
 
-		wallet, err := t.walletRepo.FindByUserID(user.ID)
+		wallet, err := t.walletRepo.FindByUserID(user.ID, trx)
 		if err != nil {
 			return err
 		}
 
 		wallet.Balance += amount
-		if err := t.walletRepo.Put(wallet); err != nil {
+		if err := t.walletRepo.Put(wallet, trx); err != nil {
 			return err
 		}
 
-		return t.mutationRepo.Put(&entity.Mutation{
+		return t.mutationRepo.Put(entity.Mutation{
 			ID:       uuid.New().String(),
 			WalletID: wallet.ID,
 			UserID:   userID,
 			Type:     1, // topup
 			Amount:   amount,
-		})
+		}, trx)
 	})
 }
 
@@ -66,7 +66,7 @@ func (t Transaction) Transfer(userID, targetID string, amount int) error {
 			return err
 		}
 
-		target, err := t.userRepo.FindById(userID, trx)
+		target, err := t.userRepo.FindById(targetID, trx)
 		if err != nil {
 			return err
 		}
@@ -88,23 +88,31 @@ func (t Transaction) Transfer(userID, targetID string, amount int) error {
 		targetWallet.Balance += amount
 		sourceWallet.Balance -= amount
 
-		if err := t.mutationRepo.Put(&entity.Mutation{
+		if err := t.walletRepo.Put(targetWallet, trx); err != nil {
+			return err
+		}
+
+		if err := t.walletRepo.Put(sourceWallet, trx); err != nil {
+			return err
+		}
+
+		if err := t.mutationRepo.Put(entity.Mutation{
 			ID:       uuid.New().String(),
 			WalletID: sourceWallet.ID,
 			UserID:   user.ID,
 			Type:     0, // down
 			Amount:   amount,
-		}); err != nil {
+		}, trx); err != nil {
 			return err
 		}
 
-		if err := t.mutationRepo.Put(&entity.Mutation{
+		if err := t.mutationRepo.Put(entity.Mutation{
 			ID:       uuid.New().String(),
 			WalletID: targetWallet.ID,
 			UserID:   target.ID,
 			Type:     1, // topup
 			Amount:   amount,
-		}); err != nil {
+		}, trx); err != nil {
 			return err
 		}
 

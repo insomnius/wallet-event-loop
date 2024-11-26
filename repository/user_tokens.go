@@ -15,21 +15,21 @@ func NewUserToken(db *db.Instance) *UserToken {
 	}
 }
 
-func (u *UserToken) FindByToken(token string, txs ...*db.Transaction) (*entity.UserToken, error) {
+func (u *UserToken) FindByToken(token string, txs ...*db.Transaction) (entity.UserToken, error) {
 	t, err := u.table(txs...)
 	if err != nil {
-		return nil, err
+		return entity.UserToken{}, err
 	}
 
 	v, err := t.FindByID(token)
 	if err != nil {
-		return nil, err
+		return entity.UserToken{}, err
 	}
 
-	return v.(*entity.UserToken), nil
+	return v.(entity.UserToken), nil
 }
 
-func (u *UserToken) Put(userToken *entity.UserToken, txs ...*db.Transaction) error {
+func (u *UserToken) Put(userToken entity.UserToken, txs ...*db.Transaction) error {
 	t, err := u.table(txs...)
 	if err != nil {
 		return err

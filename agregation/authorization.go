@@ -39,13 +39,13 @@ func NewAuthorization(
 
 func (a *Authorization) Register(email, password string) error {
 	return a.db.Transaction(func(t *db.Transaction) error {
-		existingUser, err := a.userRepo.FindByEmail(email, t)
-		if err != db.ErrNotFound || existingUser != nil {
+		_, err := a.userRepo.FindByEmail(email, t)
+		if err != db.ErrNotFound {
 			return ErrUserAlreadyExists
 		}
 
 		userID := uuid.New().String()
-		err = a.userRepo.Put(&entity.User{
+		err = a.userRepo.Put(entity.User{
 			ID:       userID,
 			Password: aurelia.Hash(password, encryptionKey),
 			Email:    email,
@@ -54,7 +54,7 @@ func (a *Authorization) Register(email, password string) error {
 			return err
 		}
 
-		err = a.walletRepo.Put(&entity.Wallet{
+		err = a.walletRepo.Put(entity.Wallet{
 			ID:      uuid.New().String(),
 			UserID:  userID,
 			Balance: 0,
@@ -78,7 +78,7 @@ func (a *Authorization) SignIn(email, password string) (string, error) {
 	}
 
 	token := aurelia.Hash(uuid.New().String(), encryptionKey)
-	if err := a.userTokenRepo.Put(&entity.UserToken{
+	if err := a.userTokenRepo.Put(entity.UserToken{
 		UserID: existingUser.ID,
 		Token:  token,
 	}); err != nil {
