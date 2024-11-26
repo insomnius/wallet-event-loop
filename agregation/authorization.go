@@ -30,9 +30,10 @@ func NewAuthorization(
 	db *db.Instance,
 ) *Authorization {
 	return &Authorization{
-		walletRepo: walletRepo,
-		userRepo:   userRepo,
-		db:         db,
+		walletRepo:    walletRepo,
+		userRepo:      userRepo,
+		userTokenRepo: userTokenRepo,
+		db:            db,
 	}
 }
 
@@ -57,7 +58,7 @@ func (a *Authorization) Register(email, password string) error {
 			ID:      uuid.New().String(),
 			UserID:  userID,
 			Balance: 0,
-		})
+		}, t)
 		if err != nil {
 			return err
 		}
@@ -77,9 +78,11 @@ func (a *Authorization) SignIn(email, password string) (string, error) {
 	}
 
 	token := aurelia.Hash(uuid.New().String(), encryptionKey)
-	a.userTokenRepo.Put(&entity.UserToken{
+	if err := a.userTokenRepo.Put(&entity.UserToken{
 		UserID: existingUser.ID,
 		Token:  token,
-	})
+	}); err != nil {
+		return "", err
+	}
 	return token, nil
 }

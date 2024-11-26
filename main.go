@@ -29,17 +29,20 @@ func main() {
 	}()
 
 	dbInstance.CreateTable("users")
+	dbInstance.CreateTable("user_tokens")
 	dbInstance.CreateTable("wallets")
 	dbInstance.CreateTable("transactions")
 
 	e := echo.New()
 	e.Use(middleware.Logger())
+
 	e.Use(middleware.Recover())
 
 	walletRepo := repository.NewWallet(dbInstance)
 	userRepo := repository.NewUser(dbInstance)
 	userTokenRepo := repository.NewUserToken(dbInstance)
 	// mutationRepo := repository.NewMutation(dbInstance)
+
 	authAggregator := agregation.NewAuthorization(
 		walletRepo,
 		userRepo,

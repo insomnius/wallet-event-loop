@@ -33,12 +33,24 @@ func UserRegister(authAggregator *agregation.Authorization) echo.HandlerFunc {
 		}
 
 		if err := authAggregator.Register(jsonBody.Email, jsonBody.Password); err != nil {
+			if errors.Is(err, agregation.ErrUserAlreadyExists) {
+				// Could lead to security issue, but doesnt matter for now
+				c.JSON(http.StatusUnprocessableEntity, H{
+					"errors": []H{
+						{
+							"detail": "user already registered",
+						},
+					},
+				})
+				return err
+			}
+
 			renderInternalServerError(c)
 
 			return err
 		}
 
-		return c.JSON(http.StatusOK, map[any]any{
+		return c.JSON(http.StatusOK, H{
 			"data": jsonBody,
 		})
 	}
@@ -90,7 +102,7 @@ func UserSignin(authAggregator *agregation.Authorization) echo.HandlerFunc {
 			return err
 		}
 
-		return c.JSON(http.StatusOK, map[any]any{
+		return c.JSON(http.StatusOK, H{
 			"data": H{
 				"token": token,
 			},
