@@ -38,15 +38,17 @@ func main() {
 
 	walletRepo := repository.NewWallet(dbInstance)
 	userRepo := repository.NewUser(dbInstance)
+	userTokenRepo := repository.NewUserToken(dbInstance)
 	// mutationRepo := repository.NewMutation(dbInstance)
 	authAggregator := agregation.NewAuthorization(
 		walletRepo,
 		userRepo,
+		userTokenRepo,
 		dbInstance,
 	)
 
 	e.POST("/users", handler.UserRegister(authAggregator))
-	e.POST("/users/signin", handler.UserSignin())
+	e.POST("/users/signin", handler.UserSignin(authAggregator))
 
 	go func() {
 		port := "8000"

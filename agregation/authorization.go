@@ -11,18 +11,22 @@ import (
 )
 
 var ErrUserAlreadyExists = errors.New("user already exists")
+var ErrUserNotFound = errors.New("user not found")
+var ErrAuthFailed = errors.New("authentication failed")
 
 const encryptionKey = "somethingsecret-dont-try-this-really-lol"
 
 type Authorization struct {
-	walletRepo *repository.Wallet
-	userRepo   *repository.User
-	db         *db.Instance
+	walletRepo    *repository.Wallet
+	userRepo      *repository.User
+	userTokenRepo *repository.UserToken
+	db            *db.Instance
 }
 
 func NewAuthorization(
 	walletRepo *repository.Wallet,
 	userRepo *repository.User,
+	userTokenRepo *repository.UserToken,
 	db *db.Instance,
 ) *Authorization {
 	return &Authorization{
@@ -60,4 +64,22 @@ func (a *Authorization) Register(email, password string) error {
 
 		return nil
 	})
+}
+
+func (a *Authorization) SignIn(email, password string) (string, error) {
+	existingUser, err := a.userRepo.FindByEmail(email)
+	if err != nil && err == db.ErrNotFound {
+		return "", ErrUserNotFound
+	}
+
+	if !aurelia.Authenticate(password, encryptionKey, existingUser.Password) {
+		return "", ErrAuthFailed
+	}
+
+	token := aurelia.Hash(uuid.New().String(), encryptionKey)
+	a.userTokenRepo.Put(&entity.UserToken{
+		UserID: existingUser.ID,
+		Token:  token,
+	})
+	return token, nil
 }
