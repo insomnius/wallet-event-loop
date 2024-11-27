@@ -13,6 +13,36 @@ This proof of concept is intended to show you how single threaded event loop cou
 
 ![Single Threaded Event Loop](https://github.com/user-attachments/assets/0661d101-2368-4be2-8b1d-dd802d4e1da3)
 
+## Benchmark
+
+**DB package benchmark**
+
+```
+Running tool: /usr/local/go/bin/go test -benchmem -run=^$ -bench ^BenchmarkTransaction$ github.com/insomnius/wallet-event-loop/db
+
+goos: linux
+goarch: amd64
+pkg: github.com/insomnius/wallet-event-loop/db
+cpu: 12th Gen Intel(R) Core(TM) i5-12400F
+BenchmarkTransaction-12    	   37472	     27656 ns/op	   42269 B/op	     224 allocs/op
+PASS
+ok  	github.com/insomnius/wallet-event-loop/db	1.367s
+```
+
+**Transfer process benchmark**
+
+```
+Running tool: /usr/local/go/bin/go test -benchmem -run=^$ -bench ^BenchmarkTransfer$ github.com/insomnius/wallet-event-loop/agregation
+
+goos: linux
+goarch: amd64
+pkg: github.com/insomnius/wallet-event-loop/agregation
+cpu: 12th Gen Intel(R) Core(TM) i5-12400F
+BenchmarkTransfer-12    	  245826	      4361 ns/op	   11114 B/op	      41 allocs/op
+PASS
+ok  	github.com/insomnius/wallet-event-loop/agregation	1.126s
+```
+
 ## Test Results
 
 ![Test Results](https://private-user-images.githubusercontent.com/20650401/390493721-647d1ed2-4b91-4154-b63d-d76952daeb70.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzI3MjUzMjEsIm5iZiI6MTczMjcyNTAyMSwicGF0aCI6Ii8yMDY1MDQwMS8zOTA0OTM3MjEtNjQ3ZDFlZDItNGI5MS00MTU0LWI2M2QtZDc2OTUyZGFlYjcwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDExMjclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQxMTI3VDE2MzAyMVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTljMmNkZTE1YTYzZDI4Y2QyM2ZiYzE5ZDA4ZDIyOGY2ZDI4YjVkY2ZiOGQ1NzE3MGIyY2M5ODlhYzA2M2NmZjYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.je9mjDKsaVimJrJ8Fv5lhuBNDv2Km4hYAfqK-okY5NQ)

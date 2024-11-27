@@ -216,3 +216,49 @@ func TestRaceCondition(t *testing.T) {
 	assert.Equal(t, expectedSourceBalance, finalSourceWallet.Balance, "Source wallet balance mismatch")
 	assert.Equal(t, expectedTargetBalance, finalTargetWallet.Balance, "Target wallet balance mismatch")
 }
+
+func BenchmarkTransfer(b *testing.B) {
+	// Initialize the in-memory database instance
+	dbInstance := db.NewInstance()
+
+	// Start the database
+	go func() {
+		dbInstance.Start()
+	}()
+
+	// Create necessary tables
+	dbInstance.CreateTable("users")
+	dbInstance.CreateTable("wallets")
+	dbInstance.CreateTable("mutations")
+
+	// Set up repositories
+	userRepo := repository.NewUser(dbInstance)
+	walletRepo := repository.NewWallet(dbInstance)
+	mutationRepo := repository.NewMutation(dbInstance)
+
+	// Set up transaction aggregator
+	transactionAggregator := agregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
+
+	// Initialize test data
+	sourceUserID := uuid.New().String()
+	targetUserID := uuid.New().String()
+
+	userRepo.Put(entity.User{ID: sourceUserID, Email: "source@example.com"})
+	userRepo.Put(entity.User{ID: targetUserID, Email: "target@example.com"})
+
+	sourceWallet := entity.Wallet{ID: uuid.New().String(), UserID: sourceUserID, Balance: 1000}
+	targetWallet := entity.Wallet{ID: uuid.New().String(), UserID: targetUserID, Balance: 500}
+
+	walletRepo.Put(sourceWallet)
+	walletRepo.Put(targetWallet)
+
+	// Reset the timer to exclude setup time
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err := transactionAggregator.Transfer(sourceUserID, targetUserID, 100)
+		if err != nil && err != agregation.ErrInsuficientFound {
+			b.Fatalf("unexpected error: %v", err)
+		}
+	}
+}

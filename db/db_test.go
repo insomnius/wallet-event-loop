@@ -171,6 +171,8 @@ func BenchmarkTransaction(b *testing.B) {
 		inst.Start()
 	}()
 
+	b.ResetTimer()
+
 	for n := 0; n < b.N; n++ {
 		tableName := fmt.Sprintf("users%d", n)
 		inst.CreateTable(tableName)
