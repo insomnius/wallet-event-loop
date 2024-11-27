@@ -1,6 +1,6 @@
-# Wallet Event Loop - Proof of Concept
+# Wallet With Single Threaded Event Loop - Proof of Concept
 
-This proof of concept is intended to show you how single event loop could solve concurrency problem that happen in a online wallet usecases.
+This proof of concept is intended to show you how single threaded event loop could solve concurrency problem that happen in a online wallet usecases.
 
 ## Requirements
 
@@ -8,6 +8,10 @@ This proof of concept is intended to show you how single event loop could solve 
 - User can top up their wallet
 - User can transfer their money from their wallet to another wallet
 - User can see their top 5 incoming and outgoing wallet mutations
+
+## Concept
+
+![Single Threaded Event Loop](https://github.com/user-attachments/assets/0661d101-2368-4be2-8b1d-dd802d4e1da3)
 
 ## Test Results
 
