@@ -1,0 +1,54 @@
+#!/bin/bash
+
+echo "=== Registering Users ==="
+curl -s localhost:8000/users -XPOST --data '{"email":"arib@gmail.com","password":"rahasia"}' || echo "Failed to register User 1"
+curl -s localhost:8000/users -XPOST --data '{"email":"user2@gmail.com","password":"rahasia"}' || echo "Failed to register User 2"
+
+echo -e "\n=== Signing in Users ==="
+TOKEN_USER_1=$(curl -s localhost:8000/users/signin -XPOST --data '{"email":"arib@gmail.com","password":"rahasia"}' | jq -r '.data.token')
+echo "TOKEN USER 1: $TOKEN_USER_1"
+TOKEN_USER_2=$(curl -s localhost:8000/users/signin -XPOST --data '{"email":"user2@gmail.com","password":"rahasia"}' | jq -r '.data.token')
+echo "TOKEN USER 2: $TOKEN_USER_2"
+
+echo -e "\n=== Fetching Wallet Info ==="
+USER_ID_1=$(curl -s localhost:8000/wallet -H "Authorization: Bearer $TOKEN_USER_1" | jq -r '.data.user_id')
+echo "User 1 ID: $USER_ID_1"
+USER_ID_2=$(curl -s localhost:8000/wallet -H "Authorization: Bearer $TOKEN_USER_2" | jq -r '.data.user_id')
+echo "User 2 ID: $USER_ID_2"
+
+echo -e "\n=== Topping Up Wallets ==="
+echo "User 1 Top-Up: 100"
+curl -s localhost:8000/transactions/topup -H "Authorization: Bearer $TOKEN_USER_1" --data '{"amount":100}' | jq
+echo "User 2 Top-Up: 500"
+curl -s localhost:8000/transactions/topup -H "Authorization: Bearer $TOKEN_USER_2" --data '{"amount":500}' | jq
+
+echo -e "\n=== Checking Wallet Balances ==="
+echo "User 1 Wallet Balance:"
+curl -s localhost:8000/wallet -H "Authorization: Bearer $TOKEN_USER_1" | jq
+echo "User 2 Wallet Balance:"
+curl -s localhost:8000/wallet -H "Authorization: Bearer $TOKEN_USER_2" | jq
+
+echo -e "\n=== Transferring Funds ==="
+echo "User 1 Transfer to User 2: 20"
+curl -s localhost:8000/transactions/transfer -H "Authorization: Bearer $TOKEN_USER_1" --data "{\"amount\":20,\"to\":\"$USER_ID_2\"}" | jq
+echo "User 1 Transfer to User 2: 10"
+curl -s localhost:8000/transactions/transfer -H "Authorization: Bearer $TOKEN_USER_1" --data "{\"amount\":10,\"to\":\"$USER_ID_2\"}" | jq
+echo "User 1 Transfer to User 2: 30"
+curl -s localhost:8000/transactions/transfer -H "Authorization: Bearer $TOKEN_USER_1" --data "{\"amount\":30,\"to\":\"$USER_ID_2\"}" | jq
+
+echo "User 2 Transfer to User 2: 40"
+curl -s localhost:8000/transactions/transfer -H "Authorization: Bearer $TOKEN_USER_2" --data "{\"amount\":40,\"to\":\"$USER_ID_1\"}" | jq
+echo "User 2 Transfer to User 2: 20"
+curl -s localhost:8000/transactions/transfer -H "Authorization: Bearer $TOKEN_USER_2" --data "{\"amount\":20,\"to\":\"$USER_ID_1\"}" | jq
+
+echo -e "\n=== Final Wallet Balances ==="
+echo "User 1 Wallet Balance:"
+curl -s localhost:8000/wallet -H "Authorization: Bearer $TOKEN_USER_1" | jq
+echo "User 2 Wallet Balance:"
+curl -s localhost:8000/wallet -H "Authorization: Bearer $TOKEN_USER_2" | jq
+
+echo -e "\n=== Top Transfer ==="
+echo "User 1 Top Transfer:"
+curl -s localhost:8000/wallet/top-transfer -H "Authorization: Bearer $TOKEN_USER_1" | jq
+echo "User 2 Top Transfer:"
+curl -s localhost:8000/wallet/top-transfer -H "Authorization: Bearer $TOKEN_USER_2" | jq

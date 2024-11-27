@@ -52,8 +52,10 @@ func CheckBalance(walletRepo *repository.Wallet) echo.HandlerFunc {
 		}
 
 		return c.JSON(http.StatusOK, H{
-			"user_id": userID,
-			"balance": userWallet.Balance,
+			"data": H{
+				"user_id": userID,
+				"balance": userWallet.Balance,
+			},
 		})
 	}
 }
@@ -100,7 +102,7 @@ func TopTransfer(mutationRepo *repository.Mutation) echo.HandlerFunc {
 		// Fetching the top 5 incoming and outgoing transactions
 		mutations, err := mutationRepo.GetByUserID(userID)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return c.JSON(http.StatusInternalServerError, H{"error": err.Error()})
 		}
 
 		sort.Slice(mutations, func(i, j int) bool {
@@ -118,9 +120,11 @@ func TopTransfer(mutationRepo *repository.Mutation) echo.HandlerFunc {
 			}
 		}
 
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"incoming": top5Incoming,
-			"outgoing": top5Outgoing,
+		return c.JSON(http.StatusOK, H{
+			"data": H{
+				"incoming": top5Incoming,
+				"outgoing": top5Outgoing,
+			},
 		})
 	}
 }

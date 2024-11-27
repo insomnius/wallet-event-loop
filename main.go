@@ -33,6 +33,7 @@ func main() {
 	dbInstance.CreateTable("user_tokens")
 	dbInstance.CreateTable("wallets")
 	dbInstance.CreateTable("transactions")
+	dbInstance.CreateTable("mutations")
 
 	e := echo.New()
 	e.Use(echoMiddleware.Logger())
