@@ -12,9 +12,10 @@ import (
 	"github.com/insomnius/wallet-event-loop/agregation"
 	"github.com/insomnius/wallet-event-loop/db"
 	"github.com/insomnius/wallet-event-loop/handler"
+	"github.com/insomnius/wallet-event-loop/handler/middleware"
 	"github.com/insomnius/wallet-event-loop/repository"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -34,14 +35,13 @@ func main() {
 	dbInstance.CreateTable("transactions")
 
 	e := echo.New()
-	e.Use(middleware.Logger())
-
-	e.Use(middleware.Recover())
+	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.Recover())
 
 	walletRepo := repository.NewWallet(dbInstance)
 	userRepo := repository.NewUser(dbInstance)
 	userTokenRepo := repository.NewUserToken(dbInstance)
-	// mutationRepo := repository.NewMutation(dbInstance)
+	mutationRepo := repository.NewMutation(dbInstance)
 
 	authAggregator := agregation.NewAuthorization(
 		walletRepo,
@@ -50,8 +50,30 @@ func main() {
 		dbInstance,
 	)
 
+	trxAggregator := agregation.NewTransaction(
+		walletRepo,
+		userRepo,
+		mutationRepo,
+		dbInstance,
+	)
+
 	e.POST("/users", handler.UserRegister(authAggregator))
 	e.POST("/users/signin", handler.UserSignin(authAggregator))
+
+	oauthMiddleware := middleware.Oauth(func(c echo.Context, token string) (bool, error) {
+		t, err := userTokenRepo.FindByToken(token)
+		if err != nil {
+			return false, err
+		}
+
+		c.Set("current_user", t)
+		return false, nil
+	})
+
+	e.GET("/me/balance", handler.CheckBalance(walletRepo), oauthMiddleware)
+	e.GET("/me/top_transfer", handler.TopTransfer(mutationRepo), oauthMiddleware)
+	e.POST("/me/top_up", handler.TopUp(trxAggregator), oauthMiddleware)
+	e.POST("/me/transfer", handler.Transfer(trxAggregator), oauthMiddleware)
 
 	go func() {
 		port := "8000"

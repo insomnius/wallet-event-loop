@@ -26,7 +26,7 @@ func TopUp(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
 
 func CheckBalance(walletRepo *repository.Wallet) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		userID := c.Param("user_id")
+		userID := c.Get("current_user").(entity.UserToken).UserID
 
 		// Get user balance
 		userWallet, err := walletRepo.FindByUserID(userID)
@@ -42,13 +42,13 @@ func CheckBalance(walletRepo *repository.Wallet) echo.HandlerFunc {
 }
 
 type TransferRequest struct {
-	Amount int `json:"amount"`
+	Amount int    `json:"amount"`
+	To     string `json:"to"`
 }
 
 func Transfer(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		userID := c.Param("user_id")
-		targetID := c.Param("target_id")
+		userID := c.Get("current_user").(entity.UserToken).UserID
 
 		var jsonBody TransferRequest
 
@@ -64,7 +64,7 @@ func Transfer(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
 			return err
 		}
 
-		if err := transactionAggregator.Transfer(userID, targetID, jsonBody.Amount); err != nil {
+		if err := transactionAggregator.Transfer(userID, jsonBody.To, jsonBody.Amount); err != nil {
 			if err == agregation.ErrInsuficientFound {
 				return c.JSON(http.StatusBadRequest, H{"error": "Insufficient funds"})
 			}
@@ -78,7 +78,7 @@ func Transfer(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
 func TopTransfer(mutationRepo *repository.Mutation) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Getting the userID to filter transfers
-		userID := c.Param("user_id")
+		userID := c.Get("current_user").(entity.UserToken).UserID
 
 		// Fetching the top 5 incoming and outgoing transactions
 		mutations, err := mutationRepo.GetByUserID(userID)
