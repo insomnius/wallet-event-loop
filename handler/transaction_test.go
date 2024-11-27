@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTest() (*echo.Echo, *agregation.Transaction, entity.User, entity.User) {
+func setupTest() (*echo.Echo, *agregation.Transaction, entity.User, entity.User, *db.Instance) {
 	// Initialize the db instance and mock repositories
 	dbInstance := db.NewInstance()
 
@@ -56,45 +56,41 @@ func setupTest() (*echo.Echo, *agregation.Transaction, entity.User, entity.User)
 	// Create a new Echo instance
 	e := echo.New()
 
-	// Register the handlers
-	e.POST("/users/:user_id/topup", handler.TopUp(transactionAggregator))
-	e.GET("/users/:user_id/balance", handler.CheckBalance(walletRepo))
-	e.GET("/users/:user_id/top_transfer", handler.TopTransfer(mutationRepo))
-	e.POST("/users/:user_id/transfer/:target_id", handler.Transfer(transactionAggregator))
-
-	return e, transactionAggregator, user1, user2
+	return e, transactionAggregator, user1, user2, dbInstance
 }
 
 func TestTopUp(t *testing.T) {
-	e, _, user1, _ := setupTest()
+	e, trxAggregator, user1, _, _ := setupTest()
 
 	// Mock the amount to top up
 	amount := 100
 	payload := map[string]int{"amount": amount}
 	payloadBytes, _ := json.Marshal(payload)
 
-	// Create a POST request to top-up user1 balance
-	req := httptest.NewRequest(http.MethodPost, "/users/"+user1.ID+"/topup", bytes.NewReader(payloadBytes))
+	req := httptest.NewRequest(http.MethodPost, "/me/topup", bytes.NewReader(payloadBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user1.ID,
+	})
 
-	// Call the handler
-	e.ServeHTTP(rec, req)
-
-	// Assert the response
+	assert.NoError(t, handler.TopUp(trxAggregator)(c))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "TopUp successful")
 }
 
 func TestCheckBalance(t *testing.T) {
-	e, _, user1, _ := setupTest()
+	e, _, user1, _, dbInstance := setupTest()
 
 	// Create a GET request to check user1's balance
 	req := httptest.NewRequest(http.MethodGet, "/users/"+user1.ID+"/balance", nil)
 	rec := httptest.NewRecorder()
-
-	// Call the handler
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user1.ID,
+	})
+	assert.NoError(t, handler.CheckBalance(repository.NewWallet(dbInstance))(c))
 
 	// Assert the response
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -102,20 +98,23 @@ func TestCheckBalance(t *testing.T) {
 }
 
 func TestTransfer(t *testing.T) {
-	e, _, user1, user2 := setupTest()
+	e, trxAggregator, user1, user2, _ := setupTest()
 
 	// Create the transfer amount
 	amount := 50
-	payload := map[string]int{"amount": amount}
+	payload := map[string]any{"amount": amount, "to": user2.ID}
 	payloadBytes, _ := json.Marshal(payload)
 
 	// Create a POST request to transfer funds from user1 to user2
-	req := httptest.NewRequest(http.MethodPost, "/users/"+user1.ID+"/transfer/"+user2.ID, bytes.NewReader(payloadBytes))
+	req := httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewReader(payloadBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
-	// Call the handler
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user1.ID,
+	})
+	assert.NoError(t, handler.Transfer(trxAggregator)(c))
 
 	// Assert the response
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -123,20 +122,23 @@ func TestTransfer(t *testing.T) {
 }
 
 func TestTopTransfer(t *testing.T) {
-	e, _, user1, user2 := setupTest()
+	e, trxAggregator, user1, user2, dbInstance := setupTest()
 
 	// Create the transfer amount
 	amount := 10
-	payload := map[string]int{"amount": amount}
+	payload := map[string]any{"amount": amount, "to": user2.ID}
 	payloadBytes, _ := json.Marshal(payload)
 
 	// Create a POST request to transfer funds from user1 to user2
-	req := httptest.NewRequest(http.MethodPost, "/users/"+user1.ID+"/transfer/"+user2.ID, bytes.NewReader(payloadBytes))
+	req := httptest.NewRequest(http.MethodPost, "/transactions/transfer", bytes.NewReader(payloadBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
-	// Call the handler
-	e.ServeHTTP(rec, req)
+	c := e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user1.ID,
+	})
+	assert.NoError(t, handler.Transfer(trxAggregator)(c))
 
 	// Assert the response
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -144,16 +146,19 @@ func TestTopTransfer(t *testing.T) {
 
 	// Create the transfer amount
 	amount = 20
-	payload = map[string]int{"amount": amount}
+	payload = map[string]any{"amount": amount, "to": user2.ID}
 	payloadBytes, _ = json.Marshal(payload)
 
 	// Create a POST request to transfer funds from user1 to user2
-	req = httptest.NewRequest(http.MethodPost, "/users/"+user1.ID+"/transfer/"+user2.ID, bytes.NewReader(payloadBytes))
+	req = httptest.NewRequest(http.MethodPost, "/transactions/transfer", bytes.NewReader(payloadBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 
-	// Call the handler
-	e.ServeHTTP(rec, req)
+	c = e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user1.ID,
+	})
+	assert.NoError(t, handler.Transfer(trxAggregator)(c))
 
 	// Assert the response
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -161,16 +166,19 @@ func TestTopTransfer(t *testing.T) {
 
 	// Create the transfer amount
 	amount = 30
-	payload = map[string]int{"amount": amount}
+	payload = map[string]any{"amount": amount, "to": user1.ID}
 	payloadBytes, _ = json.Marshal(payload)
 
 	// Create a POST request to transfer funds from user2 to user1
-	req = httptest.NewRequest(http.MethodPost, "/users/"+user2.ID+"/transfer/"+user1.ID, bytes.NewReader(payloadBytes))
+	req = httptest.NewRequest(http.MethodPost, "/transactions/transfer", bytes.NewReader(payloadBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 
-	// Call the handler
-	e.ServeHTTP(rec, req)
+	c = e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user2.ID,
+	})
+	assert.NoError(t, handler.Transfer(trxAggregator)(c))
 
 	// Assert the response
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -178,30 +186,37 @@ func TestTopTransfer(t *testing.T) {
 
 	// Create the transfer amount
 	amount = 10
-	payload = map[string]int{"amount": amount}
+	payload = map[string]any{"amount": amount, "to": user1.ID}
 	payloadBytes, _ = json.Marshal(payload)
 
 	// Create a POST request to transfer funds from user2 to user1
-	req = httptest.NewRequest(http.MethodPost, "/users/"+user2.ID+"/transfer/"+user1.ID, bytes.NewReader(payloadBytes))
+	req = httptest.NewRequest(http.MethodPost, "/transactions/transfer", bytes.NewReader(payloadBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 
-	// Call the handler
-	e.ServeHTTP(rec, req)
+	c = e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user2.ID,
+	})
+	assert.NoError(t, handler.Transfer(trxAggregator)(c))
 
 	// Assert the response
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "Transfer successful")
 
 	// Create a GET top transfer
-	req = httptest.NewRequest(http.MethodGet, "/users/"+user1.ID+"/top_transfer", nil)
+	req = httptest.NewRequest(http.MethodGet, "/wallet/top-transfer", nil)
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 
 	// Call the handler
-	e.ServeHTTP(rec, req)
+	c = e.NewContext(req, rec)
+	c.Set("current_user", entity.UserToken{
+		UserID: user1.ID,
+	})
 	assert.Equal(t, http.StatusOK, rec.Code)
 
+	assert.NoError(t, handler.TopTransfer(repository.NewMutation(dbInstance))(c))
 	var jsonResponse map[string][]entity.Mutation
 
 	_ = json.NewDecoder(rec.Body).Decode(&jsonResponse)

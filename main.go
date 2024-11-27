@@ -67,13 +67,13 @@ func main() {
 		}
 
 		c.Set("current_user", t)
-		return false, nil
+		return true, nil
 	})
 
-	e.GET("/me/balance", handler.CheckBalance(walletRepo), oauthMiddleware)
-	e.GET("/me/top_transfer", handler.TopTransfer(mutationRepo), oauthMiddleware)
-	e.POST("/me/top_up", handler.TopUp(trxAggregator), oauthMiddleware)
-	e.POST("/me/transfer", handler.Transfer(trxAggregator), oauthMiddleware)
+	e.GET("/wallet", handler.CheckBalance(walletRepo), oauthMiddleware)
+	e.GET("/wallet/top-transfer", handler.TopTransfer(mutationRepo), oauthMiddleware)
+	e.POST("/transactions/topup", handler.TopUp(trxAggregator), oauthMiddleware)
+	e.POST("/transactions/transfer", handler.Transfer(trxAggregator), oauthMiddleware)
 
 	go func() {
 		port := "8000"

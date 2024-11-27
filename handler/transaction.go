@@ -11,12 +11,29 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type TopUpRequest struct {
+	Amount int `json:"amount"`
+}
+
 func TopUp(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		userID := c.Param("user_id")
-		amount := 0 // Get amount from the request body, for now, assume it's passed in the request
+		userID := c.Get("current_user").(entity.UserToken).UserID
 
-		if err := transactionAggregator.TopUp(userID, amount); err != nil {
+		var jsonBody TopUpRequest
+
+		if err := json.NewDecoder(c.Request().Body).Decode((&jsonBody)); err != nil {
+			c.JSON(http.StatusBadRequest, H{
+				"errors": []H{
+					{
+						"detail": "bad json request",
+					},
+				},
+			})
+
+			return err
+		}
+
+		if err := transactionAggregator.TopUp(userID, jsonBody.Amount); err != nil {
 			return c.JSON(http.StatusInternalServerError, H{"error": err.Error()})
 		}
 
