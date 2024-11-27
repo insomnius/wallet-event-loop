@@ -2,14 +2,13 @@ package db
 
 import (
 	"errors"
-	"sync"
 )
 
 var ErrNotFound = errors.New("not found")
 
 type Table struct {
-	data           *sync.Map
-	changes        map[any]any
+	data           map[string]any
+	changes        map[string]any
 	enqueueProcess func(f func(*Instance) error, operationName string) error
 }
 
@@ -25,7 +24,7 @@ func (t *Table) FindByID(id string) (any, error) {
 		}
 
 		// read uncommitted
-		v, found = t.data.Load(id)
+		v, found = t.data[id]
 		if !found {
 			return ErrNotFound
 		}
@@ -43,7 +42,7 @@ func (t *Table) Filter(f func(v any) bool) []any {
 	filtered := []any{}
 
 	_ = t.enqueueProcess(func(*Instance) error {
-		t.data.Range(func(key, value any) bool {
+		for key, value := range t.data {
 			// handling read commited
 			if changeV, ok := t.changes[key]; ok {
 				value = changeV
@@ -53,9 +52,7 @@ func (t *Table) Filter(f func(v any) bool) []any {
 			if f(value) {
 				filtered = append(filtered, value)
 			}
-
-			return true
-		})
+		}
 
 		return nil
 	}, "filter")
@@ -74,7 +71,7 @@ func (t *Table) ReplaceOrStore(id string, value any) any {
 		}
 
 		// handling write commited
-		v, _ = t.data.LoadOrStore(id, value)
+		t.data[id] = value
 		return nil
 	}
 

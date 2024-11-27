@@ -1,10 +1,8 @@
 package db
 
-import "sync"
-
 type Transaction struct {
-	tables  map[string]any
-	changes map[string]map[any]any
+	tables  map[string]map[string]any
+	changes map[string]map[string]any
 }
 
 func (t *Transaction) GetTable(tableName string) (*Table, error) {
@@ -14,7 +12,7 @@ func (t *Transaction) GetTable(tableName string) (*Table, error) {
 	}
 
 	if _, found := t.changes[tableName]; !found {
-		t.changes[tableName] = make(map[any]any)
+		t.changes[tableName] = make(map[string]any)
 	}
 
 	// identification use only
@@ -22,7 +20,7 @@ func (t *Transaction) GetTable(tableName string) (*Table, error) {
 	clonedInstance.transactionIdentifier = "sub"
 
 	return &Table{
-		data: table.(*sync.Map),
+		data: table,
 		enqueueProcess: func(f func(*Instance) error, operationName string) error {
 			return f(clonedInstance)
 		},
