@@ -100,7 +100,7 @@ func (t Transaction) Transfer(userID, targetID string, amount int) error {
 			ID:       uuid.New().String(),
 			WalletID: sourceWallet.ID,
 			UserID:   user.ID,
-			Type:     0, // down
+			Type:     entity.MutationTypeDebit, // down
 			Amount:   amount,
 		}, trx); err != nil {
 			return err
@@ -110,7 +110,7 @@ func (t Transaction) Transfer(userID, targetID string, amount int) error {
 			ID:       uuid.New().String(),
 			WalletID: targetWallet.ID,
 			UserID:   target.ID,
-			Type:     1, // topup
+			Type:     entity.MutationTypeCredit, // topup
 			Amount:   amount,
 		}, trx); err != nil {
 			return err
