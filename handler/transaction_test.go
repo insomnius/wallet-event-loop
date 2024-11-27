@@ -217,12 +217,13 @@ func TestTopTransfer(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	assert.NoError(t, handler.TopTransfer(repository.NewMutation(dbInstance))(c))
-	var jsonResponse map[string][]entity.Mutation
+	var jsonResponse map[string]map[string][]entity.Mutation
 
-	_ = json.NewDecoder(rec.Body).Decode(&jsonResponse)
+	err := json.NewDecoder(rec.Body).Decode(&jsonResponse)
+	assert.NoError(t, err)
 
-	assert.Equal(t, 30, jsonResponse["incoming"][0].Amount)
-	assert.Equal(t, 10, jsonResponse["incoming"][1].Amount)
-	assert.Equal(t, 20, jsonResponse["outgoing"][0].Amount)
-	assert.Equal(t, 10, jsonResponse["outgoing"][1].Amount)
+	assert.Equal(t, 30, jsonResponse["data"]["incoming"][0].Amount, jsonResponse)
+	assert.Equal(t, 10, jsonResponse["data"]["incoming"][1].Amount, jsonResponse)
+	assert.Equal(t, 20, jsonResponse["data"]["outgoing"][0].Amount, jsonResponse)
+	assert.Equal(t, 10, jsonResponse["data"]["outgoing"][1].Amount, jsonResponse)
 }
