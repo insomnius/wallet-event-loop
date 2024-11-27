@@ -3,12 +3,12 @@ package db
 import "sync"
 
 type Transaction struct {
-	tables  *sync.Map
+	tables  map[string]any
 	changes map[string]map[any]any
 }
 
 func (t *Transaction) GetTable(tableName string) (*Table, error) {
-	table, found := t.tables.Load(tableName)
+	table, found := t.tables[tableName]
 	if !found {
 		return nil, ErrTableIsNotFound
 	}

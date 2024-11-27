@@ -13,7 +13,7 @@ var ErrTableIsNotFound = errors.New("table is not found")
 var DefaultOperationLimit = 100
 
 type Instance struct {
-	tables                *sync.Map
+	tables                map[string]any
 	operationChan         chan operationArgument
 	operationWg           *sync.WaitGroup
 	operationOpen         atomic.Bool
@@ -28,7 +28,7 @@ type operationArgument struct {
 
 func NewInstance() *Instance {
 	return &Instance{
-		tables:                &sync.Map{},
+		tables:                map[string]any{},
 		operationChan:         make(chan operationArgument, DefaultOperationLimit), // buffered allocation, faster since the memory is already allocated first instead of dynamically
 		operationWg:           &sync.WaitGroup{},
 		operationOpen:         atomic.Bool{},
@@ -87,12 +87,12 @@ func (i *Instance) Close() {
 func (i *Instance) CreateTable(tableName string) error {
 	// We use lambda function
 	op := func(x *Instance) error {
-		if _, ok := x.tables.Load(tableName); ok {
+		if _, ok := x.tables[tableName]; ok {
 			return ErrTableAlreadyExists
 		}
 
 		// initialize table
-		x.tables.Store(tableName, &sync.Map{})
+		x.tables[tableName] = &sync.Map{}
 		return nil
 	}
 
@@ -100,7 +100,7 @@ func (i *Instance) CreateTable(tableName string) error {
 }
 
 func (i *Instance) GetTable(tableName string) (*Table, error) {
-	table, found := i.tables.Load(tableName)
+	table, found := i.tables[tableName]
 	if !found {
 		return nil, ErrTableIsNotFound
 	}
@@ -125,7 +125,7 @@ func (i *Instance) Transaction(f func(*Transaction) error) error {
 
 		// commit
 		for table, change := range transaction.changes {
-			loadedTable, _ := x.tables.Load(table)
+			loadedTable := x.tables[table]
 			assertedTable := loadedTable.(*sync.Map)
 			for primaryKey, row := range change {
 				assertedTable.Store(primaryKey, row)
