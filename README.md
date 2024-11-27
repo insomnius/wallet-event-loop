@@ -24,9 +24,9 @@ goos: linux
 goarch: amd64
 pkg: github.com/insomnius/wallet-event-loop/db
 cpu: 12th Gen Intel(R) Core(TM) i5-12400F
-BenchmarkTransaction-12    	   37472	     27656 ns/op	   42269 B/op	     224 allocs/op
+BenchmarkTransaction-12    	   48580	     22459 ns/op	   40989 B/op	     182 allocs/op
 PASS
-ok  	github.com/insomnius/wallet-event-loop/db	1.367s
+ok  	github.com/insomnius/wallet-event-loop/db	1.345s
 ```
 
 **Transfer process benchmark**
@@ -38,9 +38,9 @@ goos: linux
 goarch: amd64
 pkg: github.com/insomnius/wallet-event-loop/agregation
 cpu: 12th Gen Intel(R) Core(TM) i5-12400F
-BenchmarkTransfer-12    	  245826	      4361 ns/op	   11114 B/op	      41 allocs/op
+BenchmarkTransfer-12    	  296427	      3563 ns/op	   10936 B/op	      31 allocs/op
 PASS
-ok  	github.com/insomnius/wallet-event-loop/agregation	1.126s
+ok  	github.com/insomnius/wallet-event-loop/agregation	1.103s
 ```
 
 ## Test Results
