@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/insomnius/wallet-event-loop/agregation"
+	"github.com/insomnius/wallet-event-loop/aggregation"
 	"github.com/labstack/echo/v4"
 )
 
@@ -16,7 +16,7 @@ type UserRegisterRequest struct {
 
 type UserSigninRequest UserRegisterRequest
 
-func UserRegister(authAggregator *agregation.Authorization) echo.HandlerFunc {
+func UserRegister(authAggregator *aggregation.Authorization) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var jsonBody UserRegisterRequest
 
@@ -33,7 +33,7 @@ func UserRegister(authAggregator *agregation.Authorization) echo.HandlerFunc {
 		}
 
 		if err := authAggregator.Register(jsonBody.Email, jsonBody.Password); err != nil {
-			if errors.Is(err, agregation.ErrUserAlreadyExists) {
+			if errors.Is(err, aggregation.ErrUserAlreadyExists) {
 				// Could lead to security issue, but doesnt matter for now
 				c.JSON(http.StatusUnprocessableEntity, H{
 					"errors": []H{
@@ -56,7 +56,7 @@ func UserRegister(authAggregator *agregation.Authorization) echo.HandlerFunc {
 	}
 }
 
-func UserSignin(authAggregator *agregation.Authorization) echo.HandlerFunc {
+func UserSignin(authAggregator *aggregation.Authorization) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var jsonBody UserRegisterRequest
 
@@ -74,7 +74,7 @@ func UserSignin(authAggregator *agregation.Authorization) echo.HandlerFunc {
 
 		token, err := authAggregator.SignIn(jsonBody.Email, jsonBody.Password)
 		if err != nil {
-			if errors.Is(err, agregation.ErrUserNotFound) {
+			if errors.Is(err, aggregation.ErrUserNotFound) {
 				// Could lead to security issue, but doesnt matter for now
 				c.JSON(http.StatusNotFound, H{
 					"errors": []H{
@@ -86,7 +86,7 @@ func UserSignin(authAggregator *agregation.Authorization) echo.HandlerFunc {
 				return err
 			}
 
-			if errors.Is(err, agregation.ErrAuthFailed) {
+			if errors.Is(err, aggregation.ErrAuthFailed) {
 				c.JSON(http.StatusUnprocessableEntity, H{
 					"errors": []H{
 						{

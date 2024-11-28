@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/insomnius/wallet-event-loop/agregation"
+	"github.com/insomnius/wallet-event-loop/aggregation"
 	"github.com/insomnius/wallet-event-loop/db"
 	"github.com/insomnius/wallet-event-loop/handler"
 	"github.com/insomnius/wallet-event-loop/repository"
@@ -38,7 +38,7 @@ func TestUserHandlers(t *testing.T) {
 	userTokenRepo := repository.NewUserToken(dbInstance)
 
 	// Initialize aggregator
-	authAggregator := agregation.NewAuthorization(walletRepo, userRepo, userTokenRepo, dbInstance)
+	authAggregator := aggregation.NewAuthorization(walletRepo, userRepo, userTokenRepo, dbInstance)
 
 	// Initialize Echo server
 	e := echo.New()

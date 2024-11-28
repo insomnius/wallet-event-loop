@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/insomnius/wallet-event-loop/agregation"
+	"github.com/insomnius/wallet-event-loop/aggregation"
 	"github.com/insomnius/wallet-event-loop/db"
 	"github.com/insomnius/wallet-event-loop/handler"
 	"github.com/insomnius/wallet-event-loop/handler/middleware"
@@ -44,14 +44,14 @@ func main() {
 	userTokenRepo := repository.NewUserToken(dbInstance)
 	mutationRepo := repository.NewMutation(dbInstance)
 
-	authAggregator := agregation.NewAuthorization(
+	authAggregator := aggregation.NewAuthorization(
 		walletRepo,
 		userRepo,
 		userTokenRepo,
 		dbInstance,
 	)
 
-	trxAggregator := agregation.NewTransaction(
+	trxAggregator := aggregation.NewTransaction(
 		walletRepo,
 		userRepo,
 		mutationRepo,

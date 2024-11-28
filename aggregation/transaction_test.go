@@ -1,11 +1,11 @@
-package agregation_test
+package aggregation_test
 
 import (
 	"sync"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/insomnius/wallet-event-loop/agregation"
+	"github.com/insomnius/wallet-event-loop/aggregation"
 	"github.com/insomnius/wallet-event-loop/db"
 	"github.com/insomnius/wallet-event-loop/entity"
 	"github.com/insomnius/wallet-event-loop/repository"
@@ -41,7 +41,7 @@ func TestTopUp(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Transaction service
-	transaction := agregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
+	transaction := aggregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
 
 	// Case: Successful top-up
 	err = transaction.TopUp(userID, 100)
@@ -97,7 +97,7 @@ func TestTransfer(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Transaction service
-	transaction := agregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
+	transaction := aggregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
 
 	// Case: Successful transfer
 	err = transaction.Transfer(sourceUserID, targetUserID, 100)
@@ -126,7 +126,7 @@ func TestTransfer(t *testing.T) {
 
 	// Case: Insufficient funds
 	err = transaction.Transfer(sourceUserID, targetUserID, 300)
-	assert.ErrorIs(t, err, agregation.ErrInsuficientFound)
+	assert.ErrorIs(t, err, aggregation.ErrInsuficientFound)
 
 	// Case: Non-existent user
 	err = transaction.Transfer("non-existent-user", targetUserID, 50)
@@ -160,7 +160,7 @@ func TestRaceCondition(t *testing.T) {
 	mutationRepo := repository.NewMutation(dbInstance)
 
 	// Set up transaction aggregator
-	transactionAggregator := agregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
+	transactionAggregator := aggregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
 
 	// Initialize test data
 	userID := uuid.New().String()
@@ -197,7 +197,7 @@ func TestRaceCondition(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			err := transactionAggregator.Transfer(userID, targetID, transferAmount)
-			if err != nil && err != agregation.ErrInsuficientFound {
+			if err != nil && err != aggregation.ErrInsuficientFound {
 				assert.NoError(t, err)
 			}
 		}()
@@ -237,7 +237,7 @@ func BenchmarkTransfer(b *testing.B) {
 	mutationRepo := repository.NewMutation(dbInstance)
 
 	// Set up transaction aggregator
-	transactionAggregator := agregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
+	transactionAggregator := aggregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
 
 	// Initialize test data
 	sourceUserID := uuid.New().String()
@@ -257,7 +257,7 @@ func BenchmarkTransfer(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		err := transactionAggregator.Transfer(sourceUserID, targetUserID, 100)
-		if err != nil && err != agregation.ErrInsuficientFound {
+		if err != nil && err != aggregation.ErrInsuficientFound {
 			b.Fatalf("unexpected error: %v", err)
 		}
 	}

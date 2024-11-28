@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/insomnius/wallet-event-loop/agregation"
+	"github.com/insomnius/wallet-event-loop/aggregation"
 	"github.com/insomnius/wallet-event-loop/entity"
 	"github.com/insomnius/wallet-event-loop/repository"
 	"github.com/labstack/echo/v4"
@@ -15,7 +15,7 @@ type TopUpRequest struct {
 	Amount int `json:"amount"`
 }
 
-func TopUp(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
+func TopUp(transactionAggregator *aggregation.Transaction) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userID := c.Get("current_user").(entity.UserToken).UserID
 
@@ -65,7 +65,7 @@ type TransferRequest struct {
 	To     string `json:"to"`
 }
 
-func Transfer(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
+func Transfer(transactionAggregator *aggregation.Transaction) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userID := c.Get("current_user").(entity.UserToken).UserID
 
@@ -84,7 +84,7 @@ func Transfer(transactionAggregator *agregation.Transaction) echo.HandlerFunc {
 		}
 
 		if err := transactionAggregator.Transfer(userID, jsonBody.To, jsonBody.Amount); err != nil {
-			if err == agregation.ErrInsuficientFound {
+			if err == aggregation.ErrInsuficientFound {
 				return c.JSON(http.StatusBadRequest, H{"error": "Insufficient funds"})
 			}
 			return c.JSON(http.StatusInternalServerError, H{"error": err.Error()})

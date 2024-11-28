@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/insomnius/wallet-event-loop/agregation"
+	"github.com/insomnius/wallet-event-loop/aggregation"
 	"github.com/insomnius/wallet-event-loop/db"
 	"github.com/insomnius/wallet-event-loop/entity"
 	"github.com/insomnius/wallet-event-loop/handler"
@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTest() (*echo.Echo, *agregation.Transaction, entity.User, entity.User, *db.Instance) {
+func setupTest() (*echo.Echo, *aggregation.Transaction, entity.User, entity.User, *db.Instance) {
 	// Initialize the db instance and mock repositories
 	dbInstance := db.NewInstance()
 
@@ -35,7 +35,7 @@ func setupTest() (*echo.Echo, *agregation.Transaction, entity.User, entity.User,
 	mutationRepo := repository.NewMutation(dbInstance)
 
 	// Create the transaction aggregator
-	transactionAggregator := agregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
+	transactionAggregator := aggregation.NewTransaction(walletRepo, userRepo, mutationRepo, dbInstance)
 
 	// Create users for testing
 	user1 := entity.User{ID: "user-id-1", Email: "UserOne@test.com"}
