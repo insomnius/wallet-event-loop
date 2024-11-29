@@ -20,6 +20,10 @@ func setupTest() (*echo.Echo, *aggregation.Transaction, entity.User, entity.User
 	// Initialize the db instance and mock repositories
 	dbInstance := db.NewInstance()
 
+	// This is not effective, but I let it be for now
+	// PR is open tho
+	go dbInstance.Start()
+
 	dbInstance.CreateTable("users")
 	dbInstance.CreateTable("user_tokens")
 	dbInstance.CreateTable("wallets")
