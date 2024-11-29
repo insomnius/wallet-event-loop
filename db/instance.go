@@ -3,85 +3,136 @@ package db
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var ErrTableAlreadyExists = errors.New("table already exists")
 var ErrTableIsNotFound = errors.New("table is not found")
-
+var ErrInstanceAlreadyClosed = errors.New("database instance already closed")
 var DefaultOperationLimit = 100
 
 type Instance struct {
 	tables                map[string]map[string]any
-	operationChan         chan operationArgument
 	operationWg           *sync.WaitGroup
-	operationOpen         atomic.Bool
+	operationStop         atomic.Bool
 	transactionIdentifier string
+	operationStack        atomic.Pointer[[]*operationArgument]
 }
 
 type operationArgument struct {
 	op        func(*Instance) error
 	operation string
-	result    chan error
+	wg        *sync.WaitGroup
+	err       error
 }
 
 func NewInstance() *Instance {
-	return &Instance{
+	inst := &Instance{
 		tables:                map[string]map[string]any{},
-		operationChan:         make(chan operationArgument, DefaultOperationLimit), // buffered allocation, faster since the memory is already allocated first instead of dynamically
 		operationWg:           &sync.WaitGroup{},
-		operationOpen:         atomic.Bool{},
+		operationStop:         atomic.Bool{},
+		operationStack:        atomic.Pointer[[]*operationArgument]{},
 		transactionIdentifier: "main",
 	}
+	go func() {
+		inst.start()
+	}()
+
+	inst.operationStack.Store(&[]*operationArgument{})
+	return inst
 }
 
 // Start database daemon
-func (i *Instance) Start() {
-	i.operationOpen.Store(true)
+func (i *Instance) start() {
+	maxWait := time.Millisecond
+	waitTime := time.Duration(math.Min(float64(100*time.Nanosecond)*2, float64(maxWait)))
 
-	for op := range i.operationChan {
-		if !i.operationOpen.Load() {
-			// operation already close in here
+	for {
+		if i.operationStop.Load() {
+			break
+		}
+
+		currentOp := i.operationStack.Load()
+		fmt.Println("(*currentOp)", (*currentOp), len((*currentOp)))
+		// waiting for new operations
+		if len((*currentOp)) == 0 {
+			waitTime = time.Duration(min(float64(waitTime)*2, float64(maxWait)))
+			time.Sleep(waitTime)
 			continue
 		}
+		fmt.Println("KERJA")
+
 		i.operationWg.Add(1)
 
-		// Wrap it with function, to handle panic cases.
-		err := func() (err2 error) {
+		op := (*currentOp)[0]
+
+		var remainingOp []*operationArgument
+		if len((*currentOp)) > 0 {
+			remainingOp = (*currentOp)[1:]
+		} else {
+			remainingOp = []*operationArgument{}
+		}
+
+		// Compare and swap until it success
+		for !i.operationStack.CompareAndSwap(currentOp, &remainingOp) {
+			currentOp = i.operationStack.Load()
+			if len((*currentOp)) > 0 {
+				remainingOp = (*currentOp)[1:]
+			} else {
+				remainingOp = []*operationArgument{}
+			}
+		}
+
+		err := func() (errOp error) {
 			defer func() {
 				if v := recover(); v != nil {
-					err2 = fmt.Errorf("error %v", v)
+					errOp = fmt.Errorf("error %v", v)
 				}
 				i.operationWg.Done()
 			}()
 			return op.op(i)
 		}()
-		op.result <- err
+		op.err = err
+		op.wg.Done()
 	}
 }
 
 func (i *Instance) enqueueProcess(f func(*Instance) error, operationName string) error {
-	opArgument := operationArgument{
-		op:        f,
-		result:    make(chan error, 1),
-		operation: operationName,
+	if i.operationStop.Load() {
+		return ErrInstanceAlreadyClosed
 	}
-	i.operationChan <- opArgument
 
-	return <-opArgument.result
+	opArgument := &operationArgument{
+		op:        f,
+		operation: operationName,
+		wg:        &sync.WaitGroup{},
+	}
+	opArgument.wg.Add(1)
 
+	currentOp := i.operationStack.Load()
+	newOpStack := append((*currentOp), opArgument)
+
+	// Compare and swap until it success
+	for !i.operationStack.CompareAndSwap(currentOp, &newOpStack) {
+		currentOp = i.operationStack.Load()
+		newOpStack = append((*currentOp), opArgument)
+	}
+
+	fmt.Println("menunggu hasil", i.operationStop.Load(), operationName, (*currentOp))
+
+	opArgument.wg.Wait()
+	return opArgument.err
 }
 
 func (i *Instance) Close() {
 	// Close the booelan, so that wont be upcoming request
-	i.operationOpen.Store(false)
+	i.operationStop.Store(true)
 
 	// Wait for in-progress request to finish
 	i.operationWg.Wait()
-
-	// Lastly, close the channel
-	close(i.operationChan)
 }
 
 func (i *Instance) CreateTable(tableName string) error {

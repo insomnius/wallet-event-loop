@@ -22,11 +22,6 @@ func TestUserHandlers(t *testing.T) {
 	dbInstance := db.NewInstance()
 	defer dbInstance.Close()
 
-	// Start database instance
-	go func() {
-		dbInstance.Start()
-	}()
-
 	// Setup tables
 	dbInstance.CreateTable("users")
 	dbInstance.CreateTable("wallets")

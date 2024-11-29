@@ -16,13 +16,8 @@ func TestCreateMultiple(t *testing.T) {
 	inst := db.NewInstance()
 	defer inst.Close()
 
-	go func() {
-		inst.Start()
-	}()
-
 	inst.CreateTable("user")
 	table, _ := inst.GetTable("user")
-
 	table.ReplaceOrStore("xx", entity.User{
 		ID:    "xx",
 		Email: "super@gmail.com",
@@ -36,10 +31,6 @@ func TestCreateMultiple(t *testing.T) {
 func TestPointerWorks(t *testing.T) {
 	inst := db.NewInstance()
 	defer inst.Close()
-
-	go func() {
-		inst.Start()
-	}()
 
 	inst.CreateTable("user")
 	table, _ := inst.GetTable("user")
@@ -65,10 +56,6 @@ func TestPointerWorks(t *testing.T) {
 func TestTransaction(t *testing.T) {
 	inst := db.NewInstance()
 	defer inst.Close()
-
-	go func() {
-		inst.Start()
-	}()
 
 	inst.CreateTable("users")
 
@@ -122,10 +109,6 @@ func TestTransactionAtomicity(t *testing.T) {
 	inst := db.NewInstance()
 	defer inst.Close()
 
-	go func() {
-		inst.Start()
-	}()
-
 	inst.CreateTable("users")
 
 	err := inst.Transaction(func(x *db.Transaction) error {
@@ -166,10 +149,6 @@ func BenchmarkTransaction(b *testing.B) {
 
 	inst := db.NewInstance()
 	defer inst.Close()
-
-	go func() {
-		inst.Start()
-	}()
 
 	b.ResetTimer()
 
@@ -226,10 +205,6 @@ func BenchmarkTransaction(b *testing.B) {
 func BenchmarkCreateMultiple(b *testing.B) {
 	inst := db.NewInstance()
 	defer inst.Close()
-
-	go func() {
-		inst.Start()
-	}()
 
 	inst.CreateTable("user")
 	table, _ := inst.GetTable("user")

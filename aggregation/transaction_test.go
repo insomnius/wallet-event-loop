@@ -14,9 +14,7 @@ import (
 
 func setupDB() *db.Instance {
 	dbInstance := db.NewInstance()
-	go func() {
-		dbInstance.Start()
-	}()
+
 	dbInstance.CreateTable("users")
 	dbInstance.CreateTable("wallets")
 	dbInstance.CreateTable("mutations")
@@ -144,11 +142,6 @@ func TestRaceCondition(t *testing.T) {
 	// Initialize the in-memory database instance
 	dbInstance := db.NewInstance()
 
-	// Start the database
-	go func() {
-		dbInstance.Start()
-	}()
-
 	// Create necessary tables
 	dbInstance.CreateTable("users")
 	dbInstance.CreateTable("wallets")
@@ -220,11 +213,6 @@ func TestRaceCondition(t *testing.T) {
 func BenchmarkTransfer(b *testing.B) {
 	// Initialize the in-memory database instance
 	dbInstance := db.NewInstance()
-
-	// Start the database
-	go func() {
-		dbInstance.Start()
-	}()
 
 	// Create necessary tables
 	dbInstance.CreateTable("users")

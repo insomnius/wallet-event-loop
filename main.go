@@ -24,11 +24,6 @@ func main() {
 	fmt.Println("Starting e-wallet databases...")
 	dbInstance := db.NewInstance()
 
-	// Starting database instance
-	go func() {
-		dbInstance.Start()
-	}()
-
 	dbInstance.CreateTable("users")
 	dbInstance.CreateTable("user_tokens")
 	dbInstance.CreateTable("wallets")
