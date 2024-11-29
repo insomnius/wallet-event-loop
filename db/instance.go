@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -46,8 +47,8 @@ func NewInstance() *Instance {
 
 // Start database daemon
 func (i *Instance) start() {
-	// maxWait := time.Millisecond
-	// waitTime := time.Duration(math.Min(float64(100*time.Nanosecond)*2, float64(maxWait)))
+	maxWait := time.Millisecond
+	waitTime := time.Duration(math.Min(float64(100*time.Nanosecond)*2, float64(maxWait)))
 
 	for {
 		if i.operationStop.Load() {
@@ -55,15 +56,14 @@ func (i *Instance) start() {
 		}
 
 		currentOp := i.operationStack.Load()
-
+		fmt.Println("(*currentOp)", (*currentOp), len((*currentOp)))
 		// waiting for new operations
 		if len((*currentOp)) == 0 {
-			// waitTime = time.Duration(min(float64(waitTime)*2, float64(maxWait)))
-			time.Sleep(time.Nanosecond * 2)
+			waitTime = time.Duration(min(float64(waitTime)*2, float64(maxWait)))
+			time.Sleep(waitTime)
 			continue
 		}
-		// fmt.Println("(*currentOp)", (*currentOp), len((*currentOp)))
-		// fmt.Println("KERJA")
+		fmt.Println("KERJA")
 
 		i.operationWg.Add(1)
 
@@ -79,7 +79,6 @@ func (i *Instance) start() {
 		// Compare and swap until it success
 		for !i.operationStack.CompareAndSwap(currentOp, &remainingOp) {
 			currentOp = i.operationStack.Load()
-			op = (*currentOp)[0]
 			if len((*currentOp)) > 0 {
 				remainingOp = (*currentOp)[1:]
 			} else {
@@ -122,7 +121,7 @@ func (i *Instance) enqueueProcess(f func(*Instance) error, operationName string)
 		newOpStack = append((*currentOp), opArgument)
 	}
 
-	// fmt.Println("menunggu hasil", (*currentOp))
+	fmt.Println("menunggu hasil", i.operationStop.Load(), operationName, (*currentOp))
 
 	opArgument.wg.Wait()
 	return opArgument.err
