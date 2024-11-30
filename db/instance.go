@@ -62,8 +62,6 @@ func (i *Instance) start() {
 			time.Sleep(time.Nanosecond * 2)
 			continue
 		}
-		// fmt.Println("(*currentOp)", (*currentOp), len((*currentOp)))
-		// fmt.Println("KERJA")
 
 		i.operationWg.Add(1)
 
@@ -122,8 +120,6 @@ func (i *Instance) enqueueProcess(f func(*Instance) error, operationName string)
 		newOpStack = append((*currentOp), opArgument)
 	}
 
-	// fmt.Println("menunggu hasil", (*currentOp))
-
 	opArgument.wg.Wait()
 	return opArgument.err
 }
@@ -144,7 +140,6 @@ func (i *Instance) CreateTable(tableName string) error {
 		}
 
 		// initialize table
-		// x.tables[tableName] = &sync.Map{}
 		x.tables[tableName] = map[string]any{}
 		return nil
 	}
